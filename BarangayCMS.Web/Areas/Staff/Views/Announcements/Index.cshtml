@@ -1,105 +1,163 @@
-﻿@model IEnumerable<BarangayCMS.Areas.Staff.ViewModels.AnnouncementViewModel>
+﻿@model IEnumerable<BarangayCMS.Web.Areas.Staff.ViewModels.AnnouncementViewModel>
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
 @{
     Layout = "~/Areas/Staff/Views/Shared/_Layout.cshtml";
-    ViewData["Title"] = "Barangay Bulletins & Announcements";
+    ViewData["Title"] = "Public Announcements";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
     <div>
-        <small class="text-muted text-uppercase fw-bold">Information</small>
-        <h2 class="fw-bold text-dark m-0"><i class="bi bi-megaphone-fill text-primary me-2"></i>Public Announcements</h2>
-        <p class="text-muted small mb-0">Publish official notices, community events, and advisory details.</p>
+        <h1 class="page-header__title"><i class="bi bi-megaphone-fill text-warning me-2"></i>Public Announcements</h1>
+        <p class="page-header__sub text-muted small mb-0">Publish dynamic official circulars, news updates, and informational community alerts.</p>
     </div>
-    <div>
-        <a asp-action="Create" class="btn btn-primary fw-semibold px-4 shadow-sm">
-            <i class="bi bi-pencil-square me-1"></i> Compose Post
-        </a>
-    </div>
+    <a href="/Staff/Announcements/Create" class="btn btn-warning text-dark shadow-sm fw-semibold rounded-3">
+        <i class="bi bi-plus-lg me-1"></i> Post New Update
+    </a>
 </div>
 
-<div class="card border-0 shadow-sm rounded-3">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-secondary small fw-bold">
-                    <tr>
-                        <th class="ps-4 py-3">Bulletin Title</th>
-                        <th class="py-3">Category</th>
-                        <th class="py-3">Author</th>
-                        <th class="py-3">Publish Date</th>
-                        <th class="py-3">Status</th>
-                        <th class="text-end pe-4 py-3">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="small">
-                    @if (Model == null || !Model.Any())
+<div class="app-card app-card--pad bg-white p-3 rounded-3 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 70px;">Image</th>
+                    <th>Title Heading</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Date Broadcasted</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    @foreach (var item in Model)
                     {
+                        var isActive = !item.ExpiryDate.HasValue || item.ExpiryDate.Value >= DateTime.Now;
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
-                                <i class="bi bi-clipboard-x display-6 d-block mb-2 text-secondary"></i>
-                                Walang kasalukuyang anunsyo o advisory na naka-post.
+                            <!-- 🖼️ THUMBNAIL COLUMN -->
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                {
+                                    <img src="@Url.Content(item.ImageUrl)" 
+                                         alt="Preview" 
+                                         class="rounded-2 border shadow-sm" 
+                                         style="width: 50px; height: 50px; object-fit: cover;" />
+                                }
+                                else
+                                {
+                                    <div class="rounded-2 bg-light border d-flex align-items-center justify-content-center text-muted" 
+                                         style="width: 50px; height: 50px;">
+                                        <i class="bi bi-image fs-5 opacity-50"></i>
+                                    </div>
+                                }
+                            </td>
+
+                            <td class="fw-semibold text-dark">
+                                <div class="d-flex align-items-center gap-2">
+                                    @if (item.IsPinned)
+                                    {
+                                        <i class="bi bi-pin-angle-fill text-success" title="Pinned"></i>
+                                    }
+                                    <span>@item.Title</span>
+                                </div>
+                                <small class="text-muted d-block text-truncate" style="max-width: 380px;">@item.Content</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-info-subtle text-info-emphasis rounded-pill">@(string.IsNullOrEmpty(item.Category) ? "General" : item.Category)</span>
+                            </td>
+                            <td>
+                                @if (isActive)
+                                {
+                                    <span class="badge bg-success-subtle text-success-emphasis rounded-pill">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill">Expired</span>
+                                }
+                            </td>
+                            <td>@item.DatePosted.ToString("MM/dd/yyyy")</td>
+                            <td class="text-end">
+                                <a href="/Staff/Announcements/Details/@item.AnnouncementId" class="btn btn-sm btn-outline-info me-1" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="/Staff/Announcements/Edit/@item.AnnouncementId" class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                
+                                <!-- Trigger button para sa Bootstrap Modal Delete -->
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-danger" 
+                                        title="Delete"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteAnnouncementModal" 
+                                        data-id="@item.AnnouncementId" 
+                                        data-title="@item.Title">
+                                    <i class="bi bi-trash"></i>
+                                </button>
                             </td>
                         </tr>
                     }
-                    else
-                    {
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td class="ps-4 fw-semibold text-dark">
-                                    @if (item.IsPinned)
-                                    {
-                                        <i class="bi bi-pin-angle-fill text-danger me-1" title="Pinned Post"></i>
-                                    }
-                                    @item.Title
-                                </td>
-                                <td>
-                                    <span class="badge bg-blue-subtle text-primary px-2.5 py-1.5 rounded fw-medium">
-                                        @item.Category
-                                    </span>
-                                </td>
-                                <td class="text-secondary">@item.AuthorName</td>
-                                <td class="text-secondary">@item.PublishDate.ToString("MMM dd, yyyy")</td>
-                                <td>
-                                    @if (item.ExpiryDate.HasValue && item.ExpiryDate.Value < DateTime.Today)
-                                    {
-                                        <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1.5 rounded fw-medium">Expired</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-success-subtle text-success px-2.5 py-1.5 rounded fw-medium">Active</span>
-                                    }
-                                </td>
-                                <td class="text-end pe-4">
-                                    <div class="btn-group btn-group-sm">
-                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-secondary border-secondary-subtle" title="Edit Post">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </a>
-                                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-outline-danger border-secondary-subtle" title="Remove Post">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-megaphone display-6 d-block mb-2 opacity-50"></i>
+                            <span>The community board is fresh. No official bulletins running.</span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 🔴 DELETE CONFIRMATION MODAL -->
+<div class="modal fade" id="deleteAnnouncementModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-body text-center p-4">
+                <div class="rounded-circle bg-danger-subtle text-danger d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                    <i class="bi bi-exclamation-triangle-fill fs-1"></i>
+                </div>
+
+                <h4 class="fw-bold text-dark mb-2">Kumpirmahin ang Pagbura</h4>
+                <p class="text-muted small mb-3">
+                    Sigurado ka bang gusto mong burahin ang anunsyo na: <br />
+                    <strong id="modalAnnounceTitle" class="text-dark fs-6"></strong>?
+                </p>
+
+                <form id="deleteForm" method="post" action="">
+                    @Html.AntiForgeryToken()
+                    <div class="d-flex justify-content-center gap-2 mt-4 pt-2 border-top">
+                        <button type="button" class="btn btn-light border px-4 fw-semibold rounded-3" data-bs-dismiss="modal">
+                            Kanselahin
+                        </button>
+                        <button type="submit" class="btn btn-danger px-4 fw-bold rounded-3 shadow-sm">
+                            <i class="bi bi-trash me-1"></i> Oo, Burahin
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 
-<style>
-    .bg-blue-subtle {
-        background-color: #e7f1ff;
-    }
+@section Scripts {
+    <script>
+        // Directly passes the ID and Title to the delete modal form
+        const deleteModal = document.getElementById('deleteAnnouncementModal');
+        if (deleteModal) {
+            deleteModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const id = button.getAttribute('data-id');
+                const title = button.getAttribute('data-title');
 
-    .bg-success-subtle {
-        background-color: #e6f6ec;
-    }
-
-    .bg-secondary-subtle {
-        background-color: #f1f3f5;
-    }
-</style>
+                document.getElementById('modalAnnounceTitle').textContent = title;
+                document.getElementById('deleteForm').action = '/Staff/Announcements/Delete/' + id;
+            });
+        }
+    </script>
+}

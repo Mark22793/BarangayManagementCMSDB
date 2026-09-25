@@ -93,7 +93,7 @@ namespace BarangayCMS.Web.Areas.Admin.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // 3. Talaan ng mga Opisyal (Nanatiling static/mocked base sa code mo)
+        // 3. Talaan ng mga Opisyal
         public IActionResult Officials()
         {
             var officials = new List<OfficialViewModel> {
@@ -104,7 +104,7 @@ namespace BarangayCMS.Web.Areas.Admin.Controllers
             return View(officials);
         }
 
-        // 4. Kasaysayan ng Galaw sa System (Nanatiling static/mocked base sa code mo)
+        // 4. Kasaysayan ng Galaw sa System
         public IActionResult AuditLogs()
         {
             var logs = new List<AuditLogViewModel> {
@@ -127,29 +127,47 @@ namespace BarangayCMS.Web.Areas.Admin.Controllers
         // 6. Backup and Restore Page (GET)
         public IActionResult Backup() => View();
 
-        // 🌟 Action para mag-download ng Database SQL backup dump
+        // 🌟 Action para mag-download ng Tunay na Database Backup (.bak file)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DownloadBackup()
         {
             try
             {
-                var sqlBuilder = new StringBuilder();
-                sqlBuilder.AppendLine("-- BarangayCMS System Generated Backup");
-                sqlBuilder.AppendLine($"-- Date: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-                sqlBuilder.AppendLine();
-
+                // Kunin ang kasalukuyang Database Name mula sa connection string
                 string connectionString = _context.Database.GetDbConnection().ConnectionString;
                 var dbConnectionBuilder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(connectionString);
                 string dbName = dbConnectionBuilder.InitialCatalog;
 
-                sqlBuilder.AppendLine($"CREATE DATABASE [{dbName}_Backup];");
-                sqlBuilder.AppendLine("GO");
+                string fileName = $"{dbName}_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak";
 
-                byte[] fileBytes = Encoding.UTF8.GetBytes(sqlBuilder.ToString());
-                string fileName = $"{dbName}_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.sql";
+                // Siguraduhing may folder sa local server para roon pansamantalang i-save ang file
+                string backupFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "backups");
+                if (!Directory.Exists(backupFolder))
+                {
+                    Directory.CreateDirectory(backupFolder);
+                }
 
-                return File(fileBytes, "application/sql", fileName);
+                string backupPath = Path.Combine(backupFolder, fileName);
+
+                // SQL Command para mag-generate ng buong database snapshot at records
+                string sqlQuery = $@"BACKUP DATABASE [{dbName}] 
+                                    TO DISK = '{backupPath}' 
+                                    WITH FORMAT, MEDIANAME = 'SQLServerBackups', NAME = 'Full Backup of {dbName}';";
+
+                // Isagawa ang backup query sa mismong SQL Server Engine
+                await _context.Database.ExecuteSqlRawAsync(sqlQuery);
+
+                // Basahin ang na-generate na file para maipasa sa browser download
+                byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(backupPath);
+
+                // Linisin ang temporary file sa server folder pagkatapos mabasa
+                if (System.IO.File.Exists(backupPath))
+                {
+                    System.IO.File.Delete(backupPath);
+                }
+
+                return File(fileBytes, "application/octet-stream", fileName);
             }
             catch (Exception ex)
             {

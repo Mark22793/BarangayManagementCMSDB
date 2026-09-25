@@ -1,28 +1,68 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
-namespace BarangayCMS.Areas.Staff.ViewModels
+namespace BarangayCMS.Web.Areas.Staff.ViewModels
 {
     public class ComplaintViewModel
     {
         public int ComplaintId { get; set; }
 
-        [Required(ErrorMessage = "Pumili ng residente.")]
-        [Display(Name = "Resident Name")]
-        public int ResidentId { get; set; }
+        public int Id
+        {
+            get => ComplaintId;
+            set => ComplaintId = value;
+        }
 
-        public string ResidentName { get; set; } = string.Empty;
+        [Display(Name = "Complainant Resident")]
+        public int? ResidentId { get; set; }
 
-        [Required(ErrorMessage = "Ang Subject ay kinakailangan.")]
-        [MaxLength(200)]
+        [Display(Name = "Complainant Name")]
+        public string? ComplainantName { get; set; }
+
+        public string ResidentFullName
+        {
+            get => string.IsNullOrEmpty(ComplainantName) ? "Walk-in Resident" : ComplainantName;
+            set => ComplainantName = value;
+        }
+
+        [Display(Name = "Respondent / Inirereklamo")]
+        public string? RespondentName { get; set; }
+
+        [Display(Name = "Subject / Case Matter")]
         public string Subject { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Pakilagay ang detalye ng reklamo.")]
+        [Display(Name = "Complaint Details / Description")]
         public string Description { get; set; } = string.Empty;
 
-        [Display(Name = "Date Submitted")]
-        public DateTime DateSubmitted { get; set; } = DateTime.Now;
+        public string Details
+        {
+            get => Description;
+            set => Description = value;
+        }
 
+        [Display(Name = "Incident Date & Time")]
+        [DataType(DataType.DateTime)]
+        public DateTime IncidentDate { get; set; } = DateTime.Now;
+
+        public DateTime DateSubmitted
+        {
+            get => IncidentDate;
+            set => IncidentDate = value;
+        }
+
+        [Display(Name = "Status")]
         public string Status { get; set; } = "Pending";
+
+        [Display(Name = "Assigned Officer")]
+        public string? AssignedOfficer { get; set; }
+
+        [Display(Name = "Resolution Notes")]
+        public string? ActionTaken { get; set; }
+
+        [BindNever]
+        public IEnumerable<SelectListItem>? ResidentList { get; set; }
     }
 }
