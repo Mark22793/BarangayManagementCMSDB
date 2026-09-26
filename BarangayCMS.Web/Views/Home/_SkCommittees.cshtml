@@ -4,20 +4,13 @@
 
     static string Norm(string? s) => (s ?? string.Empty).Trim().ToLowerInvariant();
 
-    // Ang lead ay batay sa TUNAY na committee assignment ng bawat SK member
-    // (o.Committee). Ginagamit ang eksaktong pangalan ng komite kaya ang SK
-    // Chairperson ay HINDI awtomatikong nakukuha ng "Sports Development" dahil
-    // lang sa kanyang ex-officio na "…Youth and Sports Development" (tingnan §14).
     string? LeadFor(string committeeTitle, params string[] keywords)
     {
         var target = Norm(committeeTitle);
 
-        // 1. Eksaktong tugma sa aktwal na naka-assign na committee.
         var exact = members.FirstOrDefault(o => o != null && Norm(o.Committee) == target);
         if (exact != null) return exact.FullName;
 
-        // 2. Fallback: keyword match sa Committee LAMANG (hindi Position), para
-        //    hindi mahila ang SK Chair sa pamamagitan ng kanyang titulo.
         var loose = members.FirstOrDefault(o =>
         {
             if (o == null) return false;
@@ -39,29 +32,46 @@
     };
 }
 
-<div class="people-section-title">
-    <span class="people-eyebrow">Mga Komite</span>
-    <h2>Sangguniang Kabataan Standing Committees</h2>
+<div class="people-section-title text-center mb-4">
+    <span class="people-eyebrow text-uppercase text-primary fw-bold tracking-wider">Mga Komite</span>
+    <h2 class="fw-bold">Sangguniang Kabataan Standing Committees</h2>
 </div>
 
-<div class="row g-3">
+<div class="row g-4">
     @foreach (var c in committees)
     {
         var lead = LeadFor(c.Title, c.Keywords);
         <div class="col-12 col-md-6 col-lg-4">
-            <div class="committee-card">
-                <div class="committee-card__icon"><i class="bi @c.Icon"></i></div>
-                <div>
-                    <h3 class="committee-card__title">@c.Title</h3>
-                    <p class="committee-card__text">@c.Text</p>
-                    @if (!string.IsNullOrWhiteSpace(lead))
-                    {
-                        <span class="committee-card__lead"><i class="bi bi-person-check"></i>@lead</span>
-                    }
-                    else
-                    {
-                        <span class="committee-card__lead text-muted"><i class="bi bi-person-x"></i>No current assignee</span>
-                    }
+            <div class="committee-flip-card">
+                <div class="committee-flip-inner">
+                    <!-- HARAPAN: Icon, Title, & Description -->
+                    <div class="committee-flip-front">
+                        <div class="committee-card__icon mb-3">
+                            <i class="bi @c.Icon fs-1 text-primary"></i>
+                        </div>
+                        <h3 class="committee-card__title h5 fw-bold mb-2">@c.Title</h3>
+                        <p class="committee-card__text text-muted small mb-0">@c.Text</p>
+                    </div>
+
+                    <!-- LIKOD: Lalabas kapag itinapat ang cursor -->
+                    <div class="committee-flip-back">
+                        <i class="bi @c.Icon fs-2 text-primary-light mb-2"></i>
+                        <h5 class="fw-bold text-white mb-2">@c.Title</h5>
+                        <p class="small text-white-50 mb-3">Committee Chairperson / Head:</p>
+
+                        @if (!string.IsNullOrWhiteSpace(lead))
+                        {
+                            <div class="badge bg-success fs-6 p-2 mb-2">
+                                <i class="bi bi-person-check-fill me-1"></i>@lead
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="badge bg-secondary fs-6 p-2 mb-2">
+                                <i class="bi bi-person-x-fill me-1"></i>No current assignee
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
         </div>

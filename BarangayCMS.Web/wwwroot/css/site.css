@@ -2621,3 +2621,125 @@ a .stat-card {
         transform: none;
     }
 }
+/* ==========================================================================
+   PUBLIC OFFICIALS - FIXED FLIP CARD CSS (NO MIRROR TEXT & SOLID BACK)
+   ========================================================================== */
+
+/* Outer Container */
+.official-card-flip {
+    background-color: transparent;
+    width: 100%;
+    height: 380px;
+    perspective: 1000px; /* Para sa 3D Flip depth */
+}
+
+/* Inner Rotating Box */
+.card-flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d !important;
+    border-radius: 16px;
+}
+
+/* Hover Trigger - Iikot ang inner container */
+.official-card-flip:hover .card-flip-inner {
+    transform: rotateY(180deg);
+}
+
+/* Parehong Harap at Likod: Kailangan ng backface-visibility: hidden para hindi mag-mirror */
+.card-flip-front,
+.card-flip-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+    overflow: hidden;
+}
+
+/* --- HARAP NG CARD (FULL PICTURE) --- */
+.card-flip-front {
+    background-color: #0f172a;
+    border: 1px solid #cbd5e1;
+    z-index: 2;
+    transform: rotateY(0deg);
+}
+
+.official-featured .card-flip-front {
+    border: 3px solid #16a34a; /* Green highlight border para kay Kapitan */
+}
+
+.card-front-image {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+    .card-front-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center top;
+        display: block;
+    }
+
+.card-front-initials {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3.5rem;
+    font-weight: 700;
+    background-color: #0d1e3d;
+    color: #ffffff;
+}
+
+.card-front-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1.5rem 1rem 1rem 1rem;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.5) 70%, transparent 100%);
+    color: #ffffff;
+    text-align: center;
+}
+
+.card-front-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+    color: #ffffff;
+}
+
+.card-front-pos {
+    font-size: 0.85rem;
+    color: #cbd5e1;
+}
+
+/* --- LIKOD NG CARD (SOLID COLOR + DETAILS ONLY, HINDI NA MAKIKITA ANG PICTURE) --- */
+.card-flip-back {
+    background-color: #0d1e3d !important; /* Solid dark background para matakpan ang pic */
+    color: #ffffff !important;
+    transform: rotateY(180deg) !important; /* Iikot pabalik ang text para HINDI baliktad basahin */
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 1px solid #334155;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+    .card-flip-back h4 {
+        color: #ffffff !important;
+        font-weight: 700;
+    }

@@ -3,7 +3,6 @@
     var featured = ViewData["Featured"] as bool? ?? false;
     var isExOfficio = ViewData["ExOfficio"] as bool? ?? false;
 
-    // Initials fallback kapag walang naka-upload na larawan.
     string Initials(string name)
     {
         var parts = (name ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -12,8 +11,6 @@
         return (parts[0].Substring(0, 1) + parts[^1].Substring(0, 1)).ToUpper();
     }
 
-    // Position-based na deskripsyon (fallback dahil walang hiwalay na Description
-    // field ang entity). Kung meron nang description sa DB, ito ang gagamitin.
     string DescribePosition(string? position)
     {
         var p = (position ?? string.Empty).ToLowerInvariant();
@@ -22,67 +19,74 @@
         if (isSk)
         {
             if (p.Contains("chair"))
-                return "Youth Leader — Leads the Sangguniang Kabataan, represents the youth, and oversees youth programs, activities, and development initiatives.";
+                return "Youth Leader — Leads the Sangguniang Kabataan and oversees youth programs.";
             if (p.Contains("secretary"))
-                return "Handles SK records, documentation, meeting minutes, communications, and administrative support.";
+                return "Handles SK records, documentation, and administrative support.";
             if (p.Contains("treasurer"))
-                return "Manages SK financial records, funds, collections, disbursements, and financial reporting.";
-            return "Represents the interests of young people and participates in youth council decision-making, programs, and community activities.";
+                return "Manages SK financial records, funds, and disbursements.";
+            return "Represents youth interests and participates in youth council decision-making.";
         }
 
         if (p.Contains("captain") || p.Contains("punong"))
-            return "Executive Head — Leads the barangay government, oversees barangay operations and public services, and serves as the presiding officer of the Sangguniang Barangay.";
+            return "Executive Head — Leads the barangay government and oversees operations and public services.";
         if (p.Contains("secretary"))
-            return "Manages barangay records, documentation, official communications, and administrative support.";
+            return "Manages barangay records, documentation, and official communications.";
         if (p.Contains("treasurer"))
-            return "Manages barangay finances, collections, disbursements, financial records, and related reports.";
-        if (p.Contains("kagawad") || p.Contains("councilor") || p.Contains("council") || p.Contains("konsehal"))
-            return "Represents community interests in the Sangguniang Barangay and participates in legislative decision-making and community programs.";
-        return "Serves the barangay and its residents in the performance of official duties and community programs.";
+            return "Manages barangay finances, collections, disbursements, and financial reports.";
+        if (p.Contains("kagawad") || p.Contains("councilor") || p.Contains("konsehal"))
+            return "Represents community interests and participates in legislative decision-making.";
+        return "Serves the barangay and its residents in official duties and community programs.";
     }
 
     var hasHistory = Model.ServiceHistories != null && Model.ServiceHistories.Any();
+    var committee = BarangayCMS.Web.Areas.Admin.Services.OfficialStructure.DisplayCommittee(Model.Position, Model.Committee);
 }
 
-<div class="official-card @(featured ? "official-featured" : "")">
-    <div class="official-card__photo">
-        @if (!string.IsNullOrWhiteSpace(Model.ProfileImagePath))
-        {
-            <img src="~/uploads/officials/@Model.ProfileImagePath" alt="Larawan ni @Model.FullName" loading="lazy" />
-        }
-        else
-        {
-            <span class="official-card__initials">@Initials(Model.FullName)</span>
-        }
+<div class="official-card-flip @(featured ? "official-featured" : "")">
+    <div class="card-flip-inner">
+        <!-- HARAPAN NG CARD (Larawan + Pangalan sa Baba) -->
+        <div class="card-flip-front">
+            <div class="card-front-image">
+                @if (!string.IsNullOrWhiteSpace(Model.ProfileImagePath))
+                {
+                    <img src="~/uploads/officials/@Model.ProfileImagePath" alt="Larawan ni @Model.FullName" loading="lazy" />
+                }
+                else
+                {
+                    <div class="card-front-initials">@Initials(Model.FullName)</div>
+                }
+                <div class="card-front-overlay">
+                    <h3 class="card-front-name">@Model.FullName</h3>
+                    <span class="card-front-pos">@Model.Position</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- LIKOD NG CARD (Details Lang — Walang Larawan, Hindi Baliktad ang Text) -->
+        <div class="card-flip-back">
+            <h4 class="fw-bold mb-1">@Model.FullName</h4>
+            <span class="badge bg-primary mb-2">@Model.Position</span>
+
+            @if (isExOfficio)
+            {
+                <div class="small text-warning mb-2">
+                    <i class="bi bi-link-45deg me-1"></i>Ex-Officio Member
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(committee))
+            {
+                <div class="small text-info mb-2 fw-semibold">
+                    <i class="bi bi-diagram-3-fill me-1"></i>@committee
+                </div>
+            }
+
+            <p class="text-white-50 small my-2">@DescribePosition(Model.Position)</p>
+
+            <button type="button" class="btn btn-sm btn-outline-light mt-auto"
+                    data-bs-toggle="modal" data-bs-target="#historyModal-@Model.BarangayOfficialId">
+                <i class="bi bi-clock-history me-1"></i>@(hasHistory ? "View Service History" : "View Term")
+            </button>
+        </div>
     </div>
-
-    <h3 class="official-card__name">@Model.FullName</h3>
-    <span class="official-card__pos">@Model.Position</span>
-
-    @if (isExOfficio)
-    {
-        <div class="official-card__exofficio"><i class="bi bi-link-45deg"></i> Ex-Officio Member</div>
-    }
-
-    @{
-        // Role-based na committee (parehong panuntunan gaya ng Admin) — hindi
-        // nagpapakita ng pekeng komite para sa Captain/Secretary/Treasurer.
-        var committee = BarangayCMS.Web.Areas.Admin.Services.OfficialStructure.DisplayCommittee(Model.Position, Model.Committee);
-    }
-    @* Public view is people-centered: ipakita LAMANG ang committee kapag may tunay na
-       assignment. Ang "No specific committee" ay ADMIN-only na label — hindi ito
-       ipinapakita sa publiko/residente. *@
-    @if (!string.IsNullOrWhiteSpace(committee))
-    {
-        <div class="official-card__committee"><i class="bi bi-diagram-3-fill me-1"></i>@committee</div>
-    }
-
-    <p class="official-card__desc">@DescribePosition(Model.Position)</p>
-
-    <span class="official-card__status"><span class="dot"></span>Active in Service</span>
-
-    <button type="button" class="official-card__history-btn"
-            data-bs-toggle="modal" data-bs-target="#historyModal-@Model.BarangayOfficialId">
-        <i class="bi bi-clock-history me-1"></i>@(hasHistory ? "View Service History" : "View Term")
-    </button>
 </div>

@@ -1,65 +1,55 @@
 @model IEnumerable<BarangayCMS.Entities.BarangayOfficial>
 @using BarangayCMS.Web.Areas.Admin.Services
 @{
-    // QC-style "Your Public Servants" directory grid. Uniform circular-avatar
-    // cards themed with the site palette (works in light/dark + every theme).
-    // Each card opens the official's existing service-history modal on click.
     var people = (Model ?? Enumerable.Empty<BarangayCMS.Entities.BarangayOfficial>()).ToList();
     var title = ViewData["ServantsTitle"] as string ?? "Your Public Servants";
     var leadId = ViewData["ServantsLeadId"] as int?;
     var exOfficioId = ViewData["ServantsExOfficioId"] as int?;
-    var cols = ViewData["ServantsCols"] as int?;
 
-    var gridClass = "servants-grid" + (cols == 3 ? " servants-grid--3" : "");
+    // Hanapin ang Kapitan para ihiwalay sa itaas (Hero position)
+    var captain = people.FirstOrDefault(o => (leadId.HasValue && o.BarangayOfficialId == leadId.Value)
+                                           || (o.Position != null && o.Position.Contains("Captain", StringComparison.OrdinalIgnoreCase)));
 
-    string Initials(string? name)
-    {
-        var parts = (name ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0) return "?";
-        if (parts.Length == 1) return parts[0].Substring(0, 1).ToUpper();
-        return (parts[0].Substring(0, 1) + parts[^1].Substring(0, 1)).ToUpper();
-    }
+    // Ang natitirang mga opisyal sa ibaba (Secretary, Treasurer, Kagawad)
+    var council = captain != null ? people.Where(o => o.BarangayOfficialId != captain.BarangayOfficialId).ToList() : people;
 }
 
 @if (people.Any())
 {
-    <section class="servants-section">
-        <div class="servants-heading">
-            <h2 class="servants-heading__title">@title</h2>
+    <section class="servants-section container py-4">
+        <div class="servants-heading text-center mb-5">
+            <h2 class="servants-heading__title fw-bold text-uppercase tracking-wide">@title</h2>
         </div>
 
-        <div class="@gridClass">
-            @foreach (var o in people)
-            {
-                var isLead = leadId.HasValue && o.BarangayOfficialId == leadId.Value;
-                var isExOfficio = exOfficioId.HasValue && o.BarangayOfficialId == exOfficioId.Value;
-                var committee = OfficialStructure.DisplayCommittee(o.Position, o.Committee);
-                <button type="button"
-                        class="servant-card @(isLead ? "servant-card--lead" : "")"
-                        data-bs-toggle="modal" data-bs-target="#historyModal-@o.BarangayOfficialId"
-                        title="View service history — @o.FullName">
-                    <span class="servant-card__avatar">
-                        @if (!string.IsNullOrWhiteSpace(o.ProfileImagePath))
-                        {
-                            <img src="~/uploads/officials/@o.ProfileImagePath" alt="Larawan ni @o.FullName" loading="lazy" />
-                        }
-                        else
-                        {
-                            <span class="servant-card__initials">@Initials(o.FullName)</span>
-                        }
-                    </span>
-                    <span class="servant-card__name">@o.FullName</span>
-                    <span class="servant-card__pos">@o.Position</span>
-                    @if (isExOfficio)
-                    {
-                        <span class="servant-card__badge"><i class="bi bi-link-45deg"></i> Ex-Officio Member</span>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(committee))
-                    {
-                        <span class="servant-card__committee">@committee</span>
-                    }
-                </button>
-            }
-        </div>
+        @* --- BARANGAY CAPTAIN (Nasa Itaas / Center) --- *@
+        @if (captain != null)
+        {
+            var captainViewData = new ViewDataDictionary(ViewData);
+            captainViewData["Featured"] = true;
+            captainViewData["ExOfficio"] = exOfficioId.HasValue && captain.BarangayOfficialId == exOfficioId.Value;
+
+            <div class="d-flex justify-content-center mb-5">
+                <div style="width: 100%; max-width: 380px;">
+                    @await Html.PartialAsync("_PublicOfficialCard", captain, captainViewData)
+                </div>
+            </div>
+        }
+
+        @* --- IBANG OPISYAL GRID (Nasa Ibaba) --- *@
+        @if (council.Any())
+        {
+            <div class="row g-4 justify-content-center">
+                @foreach (var o in council)
+                {
+                    var memberViewData = new ViewDataDictionary(ViewData);
+                    memberViewData["Featured"] = false;
+                    memberViewData["ExOfficio"] = exOfficioId.HasValue && o.BarangayOfficialId == exOfficioId.Value;
+
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        @await Html.PartialAsync("_PublicOfficialCard", o, memberViewData)
+                    </div>
+                }
+            </div>
+        }
     </section>
 }
