@@ -11,6 +11,8 @@ namespace BarangayManagementSystem.Areas.Admin.Models
         public int CertificatesHandled { get; set; }
         public int UnreadMessages { get; set; }
         public string SystemStatus { get; set; } = "Operational";
+
+        public string ActiveDisasterAlert { get; set; }
     }
 
     // Para sa Residents Page

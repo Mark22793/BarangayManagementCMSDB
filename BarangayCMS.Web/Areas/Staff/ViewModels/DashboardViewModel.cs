@@ -10,6 +10,9 @@ namespace BarangayManagementSystem.Areas.Staff.ViewModels
         public int ActiveBlotters { get; set; }
         public int RecentAnnouncementsCount { get; set; }
 
+        // 🌟 Idinagdag para sa Disaster / Emergency Alert Banner
+        public string ActiveDisasterAlert { get; set; }
+
         // RECENT DATA ARRAYS (Para may mag-load na data sa dashboard lists)
         public List<RecentActivityViewModel> RecentActivities { get; set; } = new List<RecentActivityViewModel>();
     }

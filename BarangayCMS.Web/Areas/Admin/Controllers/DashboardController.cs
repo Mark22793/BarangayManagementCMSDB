@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,25 +22,37 @@ namespace BarangayManagementSystem.Areas.Admin.Controllers
             _contactMessages = contactMessages;
         }
 
-        // 🌟 REAL-TIME DATABASE COUNTING
+        // 🌟 REAL-TIME DATABASE COUNTING WITH SHORT DISASTER ALERT BANNER
         public async Task<IActionResult> Index()
         {
+            // 1. Bibilangin ang kabuuang active/registered disasters
+            int totalAlerts = await _context.Disasters.CountAsync();
+
+            // 2. Kukunin ang pinakabagong disaster record batay sa DateCreated
+            var latestDisaster = await _context.Disasters
+                .OrderByDescending(d => d.DateCreated)
+                .FirstOrDefaultAsync();
+
+            string alertMessage = null;
+
+            if (latestDisaster != null)
+            {
+                // 🌟 SHORT & CLEAN FORMAT (Kagaya ng Pic #2):
+                // Halimbawa: "1 active emergency alert — Sunog (Fire Incident). Review immediately."
+                string alertText = $"{totalAlerts} active emergency alert{(totalAlerts > 1 ? "s" : "")}";
+                alertMessage = $"{alertText} — {latestDisaster.IncidentName} ({latestDisaster.DisasterType}). Review immediately.";
+            }
+
             var model = new AdminDashboardViewModel
             {
-                // Bibilangin ang totoong records sa Residents table
                 TotalResidents = await _context.Residents.CountAsync(),
-
-                // Bibilangin ang complaints na may status na "Pending"
-                PendingComplaints = await _context.Complaints
-                    .CountAsync(c => c.Status == "Pending"),
-
-                // 🌟 INAYOS DITO: 'Certificates' na ang ginamit mula sa iyong ApplicationDbContext
+                PendingComplaints = await _context.Complaints.CountAsync(c => c.Status == "Pending"),
                 CertificatesHandled = await _context.Certificates.CountAsync(),
-
-                // Bilang ng hindi pa nababasang mensahe mula sa Contact Us form
                 UnreadMessages = await _contactMessages.GetUnreadCountAsync(),
+                SystemStatus = "Operational",
 
-                SystemStatus = "Operational"
+                // Maikling alert message
+                ActiveDisasterAlert = alertMessage
             };
 
             return View(model);
@@ -47,8 +60,6 @@ namespace BarangayManagementSystem.Areas.Admin.Controllers
 
         public IActionResult Residents()
         {
-            // The view file is named "Resident.cshtml"; render it explicitly so the
-            // action name ("Residents") doesn't cause a "view not found" error.
             return View("Resident");
         }
 

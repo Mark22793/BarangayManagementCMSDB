@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BarangayCMS.DAL.Context;
 using BarangayCMS.Entities;
 using BarangayManagementSystem.Areas.Staff.ViewModels;
-using System.Threading.Tasks;
 
 namespace BarangayCMS.Web.Areas.Staff.Controllers
 {
@@ -35,13 +36,34 @@ namespace BarangayCMS.Web.Areas.Staff.Controllers
             var currentUser = await _userManager.GetUserAsync(User);
             ViewData["UserFullName"] = currentUser?.FullName ?? "Staff / Encoder";
 
+            // 1. Bibilangin ang kabuuang bilang ng disasters
+            int totalAlerts = await _context.Disasters.CountAsync();
+
+            // 2. Kukunin ang pinakabagong disaster record batay sa DateCreated
+            var latestDisaster = await _context.Disasters
+                .OrderByDescending(d => d.DateCreated)
+                .FirstOrDefaultAsync();
+
+            string alertMessage = null;
+
+            if (latestDisaster != null)
+            {
+                // 🌟 SHORT & CLEAN FORMAT (Kagaya ng Pic #2):
+                // Halimbawa: "1 active emergency alert — Sunog (Fire Incident). Review immediately."
+                string alertText = $"{totalAlerts} active emergency alert{(totalAlerts > 1 ? "s" : "")}";
+                alertMessage = $"{alertText} — {latestDisaster.IncidentName} ({latestDisaster.DisasterType}). Review immediately.";
+            }
+
             // Populate dashboard data mula sa Database
             var model = new DashboardViewModel
             {
                 TotalResidents = await _context.Residents.CountAsync(r => r.IsResident),
                 ActiveBlotters = await _context.Complaints.CountAsync(c => c.Status == "Pending"),
                 PendingCertificates = await _context.Certificates.CountAsync(c => c.Status == "Pending"),
-                RecentAnnouncementsCount = await _context.Announcements.CountAsync()
+                RecentAnnouncementsCount = await _context.Announcements.CountAsync(),
+
+                // 🌟 Ipapasa ang active disaster alert sa model
+                ActiveDisasterAlert = alertMessage
             };
 
             return View("~/Areas/Staff/Views/StaffDashboard/Index.cshtml", model);

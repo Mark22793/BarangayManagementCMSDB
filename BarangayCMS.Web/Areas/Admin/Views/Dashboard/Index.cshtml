@@ -12,6 +12,20 @@
     <p class="welcome-banner__text">This dashboard allows efficient monitoring and management of barangay operations, resident records, and documentation tracking.</p>
 </div>
 
+<!-- 🌟 SHORT & CLEAN DISASTER ALERT BANNER (PIC #2 STYLE) -->
+@if (!string.IsNullOrEmpty(Model.ActiveDisasterAlert))
+{
+    <div class="alert alert-danger d-flex justify-content-between align-items-center shadow-sm border-0 rounded-3 my-3 px-3 py-2" style="background-color: #fde8e8; color: #e02424;">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-exclamation-triangle text-danger fs-5"></i>
+            <span style="font-size: 0.95rem;">@Model.ActiveDisasterAlert</span>
+        </div>
+        <a href="/Admin/Disaster" class="text-danger fw-semibold text-decoration-none d-flex align-items-center gap-1" style="font-size: 0.9rem;">
+            View <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+}
+
 <!-- Counters Row (DYNAMIC DATA FROM DATABASE) -->
 <div class="row g-3 mb-4">
     <div class="col-sm-6 col-xl-3">
